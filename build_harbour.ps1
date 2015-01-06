@@ -1,21 +1,67 @@
 function Download-File {
  param (
   [string]$url,
-  [string]$file
+  [string]$file,
+  [bool]$is_ftp = $false
  )
 
- if (! (Test-Path "$file") ) {
-   Write-Host "Downloading $url to $file"
-   $downloader = new-object System.Net.WebClient
-   $downloader.Proxy.Credentials=[System.Net.CredentialCache]::DefaultNetworkCredentials;
-   $downloader.DownloadFile($url, $file)
- }
- else {
-    Write-Host "File already exists: $file"
- }
+[System.Console]::Writeline( "---- download url: $url, FTP: $is_ftp ------ " )
+
+$file_exists = (Test-Path $file)
+
+if ( $file_exists ) {
+   [System.Console]::Writeline( "File already exists - no download: $file" )
+   return $false
+}
+
+
+switch ($is_ftp)
+{
+    $true { 
+
+      $ftp_pwd_file = "c:\vagrant\ftp_password.config"
+      if (! (Test-Path $ftp_pwd_file) ) {
+        [System.Console]::WriteLine( "U vagrant direktoriju se ne nalazi $ftp_pwd_file !" )
+         exit 1
+      }
+      $user = "ftpadmin"
+      [System.Console]::WriteLine("U vagrant direktoriju se nalazi ftp_password.config")
+      $pass = Get-Content( $ftp_pwd_file )
+      [System.Console]::WriteLine( "ftp pasword je: $pass" )
+
+      $webclient = New-Object System.Net.WebClient
+      $webclient.Credentials = New-Object System.Net.NetworkCredential($user,$pass)
+      break 
+    }
+
+    default { 
+      $webclient = New-Object System.Net.WebClient
+      $webclient.Proxy.Credentials=[System.Net.CredentialCache]::DefaultNetworkCredentials;
+      break 
+   }
 
 }
 
+ [System.Console]::Writeline( "Downloading $url to $file" )
+ $webclient.DownloadFile($url, $file)
+
+ return $true
+
+}
+
+# http://www.leeholmes.com/blog/2008/07/30/workaround-the-os-handles-position-is-not-what-filestream-expected/
+
+$bindingFlags = [Reflection.BindingFlags] "Instance,NonPublic,GetField"
+$objectRef = $host.GetType().GetField("externalHostRef", $bindingFlags).GetValue($host)
+$bindingFlags = [Reflection.BindingFlags] "Instance,NonPublic,GetProperty"
+$consoleHost = $objectRef.GetType().GetProperty("Value", $bindingFlags).GetValue($objectRef, @())
+[void] $consoleHost.GetType().GetProperty("IsStandardOutputRedirected", $bindingFlags).GetValue($consoleHost, @())
+$bindingFlags = [Reflection.BindingFlags] "Instance,NonPublic,GetField"
+$field = $consoleHost.GetType().GetField("standardOutputWriter", $bindingFlags)
+$field.SetValue($consoleHost, [Console]::Out)
+$field2 = $consoleHost.GetType().GetField("standardErrorWriter", $bindingFlags)
+$field2.SetValue($consoleHost, [Console]::Out)
+ 
 
 $installDir = "c:\Users\vagrant"
 $ftp = "ftp://router-7.bring.out.ba/Main/files/Platform/"
@@ -28,58 +74,29 @@ $file_java = "home_java.tar.gz"
 $file_psql = "PSQL_Platform.zip"
 
 
-$user = "ftpadmin"
-
-
-$ftp_pwd_file = "c:\vagrant\ftp_password.config"
-if (! (Test-Path $ftp_pwd_file) ) {
-  Write-Host "U vagrant direktoriju se ne nalazi $ftp_pwd_file !"
-  exit 1
-}
-
-Write-Host "U vagrant direktoriju se nalazi ftp_password.config"
-$pass = Get-Content( $ftp_pwd_file )
-Write-Host "ftp pasword je: $pass"
-
 $destCygwin = Join-Path $installDir $file
 $destQt = Join-Path $installDir $file_qt
 $destJava = Join-Path $installDir $file_java
 $destHb = Join-Path $installDir $file_hb
 $destPSQL = Join-Path $installDir $file_psql
 
-[System.Console]::Writeline($ftp)
-[System.Console]::Writeline($user)
-[System.Console]::Writeline($file)
-[System.Console]::Writeline($destCygwin)
+$url = $ftp + $file
+Download-File $url $destCygwin $true
 
-$webclientFtp = New-Object System.Net.WebClient
-$webclientFtp.Credentials = New-Object System.Net.NetworkCredential($user,$pass)
+$url_qt = $ftp + $file_qt
+Download-File $url_qt $destQt $true
 
-$uri = New-Object System.Uri($ftp + $file)
-[System.Console]::Writeline( "download: " + $uri)
-$webclientFtp.DownloadFile($uri, $destCygwin)
-
-$uri_qt = New-Object System.Uri($ftp + $file_qt)
-[System.Console]::Writeline( "download: " + $uri_qt)
-$webclientFtp.DownloadFile($uri_qt, $destQt)
-
-$uri_hb = New-Object System.Uri($ftp + $file_hb)
-[System.Console]::Writeline( "download: " + $uri_hb)
-$webclientFtp.DownloadFile($uri_hb, $destHb)
+$uri_hb = $ftp + $file_hb
+Download-File $uri_hb $destHb $true
 
 
-$uri_java = New-Object System.Uri($ftp + $file_java)
-[System.Console]::Writeline( "download: " + $uri_java)
-$webclientFtp.DownloadFile($uri_java, $destJava)
+$uri_java = $ftp + $file_java
+Download-File $uri_java $destJava $true
 
-$uri_psql = New-Object System.Uri($ftp_win32 + $file_psql )
-[System.Console]::Writeline( "download: " + $uri_psql)
-$webclientFtp.DownloadFile($uri_psql, $destPSQL )
+$uri_psql = $ftp_win32 + $file_psql
+Download-File $uri_psql $destPSQL $true
 
-
-[System.Console]::Writeline( "Download 7za from chocolatey")
 $S7zaExe = Join-Path $installDir '7za.exe'
-
 Download-File 'https://chocolatey.org/7za.exe' "$S7zaExe"
 
 
@@ -91,7 +108,7 @@ if (! $file_present) {
 
 $file_present = Test-Path "c:\Qt"
 if (! $file_present) {
-  [System.Console]::Writeline( "Extract qt to " + $destQt)
+ [System.Console]::Writeline( "Extract qt to " + $destQt)
  Start-Process "$S7zaExe" -ArgumentList "x -o`"c:\`" -y `"$destQt`"" -Wait -NoNewWindow
 }
 
@@ -106,7 +123,7 @@ $stream = [System.IO.StreamWriter] $script
 $stream.Write("#!/bin/bash" + $new_line)
 
 $stream.Write("tar xvfz $vagrant_dir/$file_java" + $new_line)
-$stream.Write("rm $vagrant_dir/$file_java" + $new_line)
+# $stream.Write("rm $vagrant_dir/$file_java" + $new_line)
 
 $stream.Write("mkdir hb" + $new_line)
 $stream.Write("mkdir -p $platform_dir/HB" + $new_line)
@@ -118,7 +135,7 @@ if (! $file_present) {
   $stream.Write("mkdir -p $platform_dir/PSQL" + $new_line)
   $stream.Write("cd $platform_dir/PSQL" + $new_line)
   $stream.Write("unzip -o $vagrant_dir/$file_psql" + $new_line)
-  $stream.Write("rm $vagrant_dir/$file_psql" + $new_line)
+  # $stream.Write("rm $vagrant_dir/$file_psql" + $new_line)
 }
 
 $stream.Write('cd $HOME/hb' + $new_line)
@@ -126,7 +143,7 @@ $stream.Write('cd $HOME/hb' + $new_line)
 $file_present = Test-Path "c:\cygwin\home\vagrant\hb\src"
 if (! $file_present) {
   $stream.Write("tar xvfz /cygdrive/c/Users/vagrant/$file_hb" + $new_line)
-  $stream.Write("rm /cygdrive/c/Users/vagrant/$file_hb" + $new_line)
+  # $stream.Write("rm /cygdrive/c/Users/vagrant/$file_hb" + $new_line)
 }
 
 $stream.Write("git checkout -f F18_master" + $new_line)
@@ -152,7 +169,7 @@ $stream.Write('export HB_LIB_INSTALL=$HB_ROOT\\lib' + $new_line)
 $stream.Write('export HB_INSTALL_PREFIX=$HB_ROOT' + $new_line)
 $stream.Write('export HB_WITH_QT=$QT_HOME\\$QT_VER\\mingw$MINGW_VER\\include' + $new_line)
 $stream.Write('export HB_WITH_PGSQL=$PSQL_HOME\\include' + $new_line)
-$stream.Write("./win-make.exe clean install" + $new_line)
+$stream.Write("./win-make.exe install" + $new_line)
 
 $stream.Write( "cd /cygdrive/c/Platform/HB" + $new_line)
 $stream.Write( "zip -r HB_Platform.zip bin" + $new_line)
