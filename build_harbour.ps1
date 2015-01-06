@@ -61,7 +61,14 @@ $field = $consoleHost.GetType().GetField("standardOutputWriter", $bindingFlags)
 $field.SetValue($consoleHost, [Console]::Out)
 $field2 = $consoleHost.GetType().GetField("standardErrorWriter", $bindingFlags)
 $field2.SetValue($consoleHost, [Console]::Out)
- 
+
+
+$ssh_key_file = "c:\vagrant\hernad_ssh.key"
+if (! (Test-Path $ssh_key_file) ) {
+   [System.Console]::WriteLine( "U vagrant direktoriju se ne nalazi $ftp_pwd_file !" )
+   exit 1
+}
+
 
 $installDir = "c:\Users\vagrant"
 $ftp = "ftp://router-7.bring.out.ba/Main/files/Platform/"
