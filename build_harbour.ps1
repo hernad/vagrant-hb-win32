@@ -65,7 +65,7 @@ $field2.SetValue($consoleHost, [Console]::Out)
 
 $ssh_key_file = "c:\vagrant\hernad_ssh.key"
 if (! (Test-Path $ssh_key_file) ) {
-   [System.Console]::WriteLine( "U vagrant direktoriju se ne nalazi $ftp_pwd_file !" )
+   [System.Console]::WriteLine( "U vagrant direktoriju se ne nalazi $ssh_key_file !" )
    exit 1
 }
 
