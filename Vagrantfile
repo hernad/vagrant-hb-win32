@@ -11,7 +11,7 @@ Vagrant.configure(2) do |config|
 
   config.vm.provider "virtualbox" do |vb|
      vb.gui = true
-     vb.memory = "2048"
+     vb.memory = "1536" 
   end
 
   config.vm.provision "shell", path: "build_harbour.ps1"

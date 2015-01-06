@@ -4,14 +4,14 @@ function Download-File {
   [string]$file
  )
 
- if (Test-Path $file) {
-   [System.Console]::Writeline("Downloading $url to $file")
+ if (! (Test-Path "$file") ) {
+   Write-Host "Downloading $url to $file"
    $downloader = new-object System.Net.WebClient
    $downloader.Proxy.Credentials=[System.Net.CredentialCache]::DefaultNetworkCredentials;
    $downloader.DownloadFile($url, $file)
  }
  else {
-    [System.Console]::Writeline("File already exists: $file")
+    Write-Host "File already exists: $file"
  }
 
 }
@@ -29,8 +29,16 @@ $file_psql = "PSQL_Platform.zip"
 
 
 $user = "ftpadmin"
+
+
+$ftp_pwd_file = "c:\vagrant\ftp_password.config"
+if (! (Test-Path $ftp_pwd_file) ) {
+  Write-Host "U vagrant direktoriju se ne nalazi $ftp_pwd_file !"
+  exit 1
+}
+
 Write-Host "U vagrant direktoriju se nalazi ftp_password.config"
-$pass = Get-Content( "c:\vagrant\ftp_password.config" )
+$pass = Get-Content( $ftp_pwd_file )
 Write-Host "ftp pasword je: $pass"
 
 $destCygwin = Join-Path $installDir $file
@@ -153,11 +161,12 @@ $stream.Write( "zip -r HB_Platform_sdk.zip include lib" + $new_line)
 $file_server_user="root"
 $file_server_host="files.bring.out.ba"
 $file_server_path="/mnt/HD/HD_a2/bringout/Platform/win32"
+
 $stream.Write( "cp /cygdrive/c/vagrant/hernad_ssh.key /home/vagrant/ssh.key" + $new_line )
 $stream.Write( "chmod 0600 /home/vagrant/ssh.key" + $new_line )
 $stream.Write( "export SSH_OPTS=`"-i /home/vagrant/ssh.key -o StrictHostKeyChecking=no`"" + $new_line)
-$stream.Write( "scp `$SSH_OPTS HB_Platform*.zip $file_server_user@$file_server_host:$file_server_path" + $new_line)
-$stream.Write( "ssh `$SSH_OPTS $file_server_user@$file_server_host chown hernad $file_server_path/HB_Platform*.zip" + $new_line)
+$stream.Write( "scp `$SSH_OPTS HB_Platform*.zip $file_server_user@${file_server_host}:${file_server_path}/" + $new_line)
+$stream.Write( "ssh `$SSH_OPTS ${file_server_user}@${file_server_host} chown hernad ${file_server_path}/HB_Platform*.zip" + $new_line)
 $stream.close()
 
 $command = @'
