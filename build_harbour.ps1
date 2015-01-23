@@ -180,7 +180,7 @@ $stream.Write("./win-make.exe install" + $new_line)
 
 $stream.Write( "cd /cygdrive/c/Platform/HB" + $new_line)
 $stream.Write( "zip -r HB_Platform.zip bin" + $new_line)
-$stream.Write( "zip -r HB_Platform_sdk.zip include lib" + $new_line)
+$stream.Write( 'zip -r HB_Platform_sdk.zip include lib contrib addons doc *.txt README.md' + $new_line)
 
 $file_server_user="root"
 $file_server_host="files.bring.out.ba"
