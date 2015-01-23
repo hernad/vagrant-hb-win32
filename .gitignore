@@ -2,3 +2,4 @@ ftp_password.config
 *password*.config
 *.key
 Vagrantfile
+.vagrant
