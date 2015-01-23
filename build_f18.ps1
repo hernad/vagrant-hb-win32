@@ -151,13 +151,9 @@ if (! $file_present) {
   $stream.Write("unzip -o $vagrant_dir/$file_psql" + $new_line)
 }
 
-$file_present = Test-Path "c:\Platform\HB\bin"
-if (! $file_present) {
-
-  $stream.Write("mkdir -p $platform_dir/HB" + $new_line)
-  $stream.Write("cd $platform_dir/HB" + $new_line)
-  $stream.Write("unzip -o $vagrant_dir/$file_hb" + $new_line)
-}
+$stream.Write("mkdir -p $platform_dir/HB" + $new_line)
+$stream.Write("cd $platform_dir/HB" + $new_line)
+$stream.Write("unzip -o $vagrant_dir/$file_hb" + $new_line)
 
 $stream.Write('cd $HOME/F18_knowhow' + $new_line)
 
