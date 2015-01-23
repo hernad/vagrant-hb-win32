@@ -63,29 +63,30 @@ $field2 = $consoleHost.GetType().GetField("standardErrorWriter", $bindingFlags)
 $field2.SetValue($consoleHost, [Console]::Out)
 
 
-$ssh_key_file = "c:\vagrant\hernad_ssh.key"
+$ssh_key_file = 'c:\vagrant\hernad_ssh.key'
 if (! (Test-Path $ssh_key_file) ) {
    [System.Console]::WriteLine( "U vagrant direktoriju se ne nalazi $ssh_key_file !" )
    exit 1
 }
 
 
-$installDir = "c:\Users\vagrant"
+$installDir = 'c:\Users\vagrant'
 $ftp = "ftp://router-7.bring.out.ba/Main/files/Platform/"
 $ftp_win32 = "ftp://router-7.bring.out.ba/Main/files/Platform/win32/"
 
 $file = "cygwin-3.7z"
 $file_qt = "Qt_54_mingw_win32.7z"
-$file_hb = "HB_Platform_win32.tar.gz"
+$file_hb = "HB_Platform_win32.zip"
 $file_java = "home_java.tar.gz"
 $file_psql = "PSQL_Platform.zip"
-
+$file_f18 = "F18_git.tar.gz"
 
 $destCygwin = Join-Path $installDir $file
 $destQt = Join-Path $installDir $file_qt
 $destJava = Join-Path $installDir $file_java
 $destHb = Join-Path $installDir $file_hb
 $destPSQL = Join-Path $installDir $file_psql
+$destF18 = Join-Path $installDir $file_f18
 
 $url = $ftp + $file
 Download-File $url $destCygwin $true
@@ -96,12 +97,18 @@ Download-File $url_qt $destQt $true
 $uri_hb = $ftp + $file_hb
 Download-File $uri_hb $destHb $true
 
-
 $uri_java = $ftp + $file_java
 Download-File $uri_java $destJava $true
 
 $uri_psql = $ftp_win32 + $file_psql
 Download-File $uri_psql $destPSQL $true
+
+$uri_psql = $ftp + $file_hb
+Download-File $uri_psql $destHb $true
+
+$uri_f18 = $ftp + $file_f18
+Download-File $uri_f18 $destF18 $true
+
 
 $S7zaExe = Join-Path $installDir '7za.exe'
 Download-File 'https://chocolatey.org/7za.exe' "$S7zaExe"
@@ -154,16 +161,19 @@ if (! $file_present) {
 
 $stream.Write('cd $HOME/F18_knowhow' + $new_line)
 
-$file_present = Test-Path "c:\cygwin\home\vagrant\F18_knowhow"
+$file_present = Test-Path "c:\cygwin\home\vagrant\F18_knowhow\F18.hbp"
 if (! $file_present) {
   $stream.Write("tar xvfz /cygdrive/c/Users/vagrant/$file_f18" + $new_line)
   # $stream.Write("rm /cygdrive/c/Users/vagrant/$file_f18" + $new_line)
 }
 
-$stream.Write("git checkout -f F18_master" + $new_line)
+$stream.Write("git checkout -f 1.7" + $new_line)
+$stream.Write("git clean -d -fx" + $new_line)
+$stream.Write("git pull" + $new_line)
 $stream.Write("export PATH=/opt/lo/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:$PATH" + $new_line)
 
 $stream.Write('export C_ROOT=C:' + $new_line)
+$stream.Write('export HB_PLATFORM=win' + $new_line)
 $stream.Write('export HB_ARCHITECTURE=win' + $new_line)
 $stream.Write('export HB_COMPILER=mingw' + $new_line)
 $stream.Write('export WIN_HOME=$C_ROOT\\Users\\vagrant' + $new_line)
@@ -184,9 +194,11 @@ $stream.Write('export HB_INSTALL_PREFIX=$HB_ROOT' + $new_line)
 $stream.Write('export HB_WITH_QT=$QT_HOME\\$QT_VER\\mingw$MINGW_VER\\include' + $new_line)
 $stream.Write('export HB_WITH_PGSQL=$PSQL_HOME\\include' + $new_line)
 
-$stream.Write("./build_release.sh" + $new_line)
-$stream.Write("cp /cygdrive/c/vagrant/hernad_ssh.key $HOME" + $new_line)
-$stream.Write("chown 0700 $HOME/hernad_ssh.key" + $new_line)
+$stream.Write('echo `pwd`' + $new_line)
+$stream.Write('./build_release.sh' + $new_line)
+$stream.Write('cp /cygdrive/c/vagrant/hernad_ssh.key $HOME' + $new_line)
+$stream.Write('chown vagrant $HOME/hernad_ssh.key' + $new_line)
+$stream.Write('chmod 0700 $HOME/hernad_ssh.key' + $new_line)
 $stream.Write("scripts/build_gz.sh XX --push" + $new_line)
 
 $stream.close()
