@@ -1,4 +1,7 @@
+# setup w7-choco-bs vagrant box
 
+     curl -LO ftp://ftpadmin:mypassword@router-7.bring.out.ba/Main/files/Platform/vagrant-w7-choco-bs.box
+     vagrant box add w7-choco-bs vagrant-w7-choco-bs.box
 
 ## build harbour
 
